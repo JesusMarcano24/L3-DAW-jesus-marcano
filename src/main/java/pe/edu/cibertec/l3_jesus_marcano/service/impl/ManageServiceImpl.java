@@ -20,9 +20,13 @@ public class ManageServiceImpl implements ManageService {
 
     @Override
     public List<CarDto> getAllCars() throws Exception {
-
         List<CarDto> cars = new ArrayList<>();
         Iterable<Car> iterable = carRepository.findAll();
+
+        if (!iterable.iterator().hasNext()) {
+            throw new Exception("No cars found");
+        }
+
         iterable.forEach(car -> {
             CarDto dto = new CarDto(
                     car.getCar_id(),
@@ -42,8 +46,12 @@ public class ManageServiceImpl implements ManageService {
 
     @Override
     public Optional<CarDto> getAllCarsById(int id) throws Exception {
-
         Optional<Car> optional = carRepository.findById(id);
+
+        if (optional.isEmpty()) {
+            throw new Exception("Car with ID " + id + " not found");
+        }
+
         return optional.map(car -> new CarDto(
                 car.getCar_id(),
                 car.getMake(),
@@ -58,8 +66,11 @@ public class ManageServiceImpl implements ManageService {
 
     @Override
     public Optional<CarDetailDto> getCarById(int id) throws Exception {
-
         Optional<Car> optional = carRepository.findById(id);
+
+        if (optional.isEmpty()) {
+            throw new Exception("Car with ID " + id + " not found");
+        }
 
         return optional.map(car -> new CarDetailDto(
                 car.getCar_id(),
@@ -85,57 +96,61 @@ public class ManageServiceImpl implements ManageService {
     public boolean updateCar(CarDto carUpdateDto) throws Exception {
         Optional<Car> optional = carRepository.findById(carUpdateDto.car_id());
 
-        return optional.map(
-                car -> {
-                    car.setMake(carUpdateDto.make());
-                    car.setModel(carUpdateDto.model());
-                    car.setLicense_plate(carUpdateDto.license_plate());
-                    car.setOwner_name(carUpdateDto.owner_name());
-                    car.setPurchase_date(carUpdateDto.purchase_date());
-                    car.setMileage(carUpdateDto.mileage());
-                    car.setColor(carUpdateDto.color());
-                    carRepository.save(car);
+        if (optional.isEmpty()) {
+            throw new Exception("Car with ID " + carUpdateDto.car_id() + " not found for update");
+        }
 
-                    return true;
-                }
-        ).orElse(false);
+        optional.ifPresent(car -> {
+            car.setMake(carUpdateDto.make());
+            car.setModel(carUpdateDto.model());
+            car.setLicense_plate(carUpdateDto.license_plate());
+            car.setOwner_name(carUpdateDto.owner_name());
+            car.setPurchase_date(carUpdateDto.purchase_date());
+            car.setMileage(carUpdateDto.mileage());
+            car.setColor(carUpdateDto.color());
+            carRepository.save(car);
+        });
+
+        return true;
     }
 
     @Override
     public boolean deleteCarById(int id) throws Exception {
         Optional<Car> optional = carRepository.findById(id);
 
-        return optional.map(
-                car -> {
-                    carRepository.delete(car);
-                    return true;
-                }
-        ).orElse(false);
+        if (optional.isEmpty()) {
+            throw new Exception("Car with ID " + id + " not found for deletion");
+        }
+
+        optional.ifPresent(carRepository::delete);
+        return true;
     }
 
     @Override
     public boolean addCar(CarDetailDto carDetailDto) throws Exception {
         Optional<Car> optional = carRepository.findById(carDetailDto.car_id());
+
         if (optional.isPresent()) {
-            return false;
-        } else {
-            Car car = new Car();
-            car.setMake(carDetailDto.make());
-            car.setModel(carDetailDto.model());
-            car.setYear(carDetailDto.year());
-            car.setVin(carDetailDto.vin());
-            car.setLicense_plate(carDetailDto.license_plate());
-            car.setOwner_name(carDetailDto.owner_name());
-            car.setOwner_contact(carDetailDto.owner_contact());
-            car.setPurchase_date(carDetailDto.purchase_date());
-            car.setMileage(carDetailDto.mileage());
-            car.setEngine_type(carDetailDto.engine_type());
-            car.setColor(carDetailDto.color());
-            car.setInsurance_company(carDetailDto.insurance_company());
-            car.setRegistration_expiration_date(carDetailDto.registration_expiration_date());
-            car.setService_due_date(carDetailDto.service_due_date());
-            carRepository.save(car);
-            return true;
+            throw new Exception("Car with ID " + carDetailDto.car_id() + " already exists");
         }
+
+        Car car = new Car();
+        car.setMake(carDetailDto.make());
+        car.setModel(carDetailDto.model());
+        car.setYear(carDetailDto.year());
+        car.setVin(carDetailDto.vin());
+        car.setLicense_plate(carDetailDto.license_plate());
+        car.setOwner_name(carDetailDto.owner_name());
+        car.setOwner_contact(carDetailDto.owner_contact());
+        car.setPurchase_date(carDetailDto.purchase_date());
+        car.setMileage(carDetailDto.mileage());
+        car.setEngine_type(carDetailDto.engine_type());
+        car.setColor(carDetailDto.color());
+        car.setInsurance_company(carDetailDto.insurance_company());
+        car.setRegistration_expiration_date(carDetailDto.registration_expiration_date());
+        car.setService_due_date(carDetailDto.service_due_date());
+        carRepository.save(car);
+
+        return true;
     }
 }
